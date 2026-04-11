@@ -61,5 +61,4 @@ El script vive en `scripts/install-cuis-ui-packages.st` para volver a instalar l
 
 ## Estado actual
 
-- `IdeBrowserWindow open` presenta los tres paneles y editor con gutter.
-- Suite (`CuisUI-IDE-Tests`) hoy: `35` tests verdes.
+- `IdeBrowserWindow open` presenta los tres paneles y el editor con gutter.
