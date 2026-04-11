@@ -62,3 +62,5 @@ El script vive en `scripts/install-cuis-ui-packages.st` para volver a instalar l
 ## Estado actual
 
 - `IdeBrowserWindow open` presenta los tres paneles y el editor con gutter.
+
+![IDE Browser](assets/ide-browser.png)
