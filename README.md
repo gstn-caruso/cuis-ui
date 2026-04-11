@@ -1,6 +1,6 @@
 # Cuis UI Workspace
 
-Workspace vivo para construir una nueva experiencia de IDE Morphic sobre Cuis Smalltalk.
+Workspace vivo para construir una experiencia de IDE Morphic sobre Cuis Smalltalk.
 
 ## Características principales
 
@@ -12,17 +12,23 @@ Workspace vivo para construir una nueva experiencia de IDE Morphic sobre Cuis Sm
 
 ## Requisitos
 
-- Cuis Smalltalk 7.7 (update `#7777` o superior) corriendo desde `Cuis-Smalltalk-Dev`.
-- Un clon de este repo en tu filesystem local.
-- Herramientas MCP (`cuis-mcp`) si querés editar desde la línea de comandos.
+```bash
+git clone https://github.com/Cuis-Smalltalk/Cuis-Smalltalk-Dev.git
+git clone https://github.com/gstn-caruso/cuis-ui.git
+```
+
+- Imagen Cuis 7.7 (#7777+)
 
 ## Inicio rápido
 
-1. **Cloná** este repo junto a tu checkout de Cuis.
-2. **Abrí** tu imagen Cuis y desde un `File List` fileIn el script `scripts/install-cuis-ui-packages.st`.
-   - El script te pide el directorio del repo y luego instala `Core`, `Browser` y `Tests` usando `CodePackageFile installPackage:`.
-3. **Arrancá** la ventana con `IdeBrowserWindow open` (evaluá el snippet en un Workspace o vía MCP `eval`).
-4. **Explorá** los paneles: packages -> clases -> protocolos/métodos y el editor inferior con gutter, línea activa y lamparita.
+1. En la imagen Cuis, fileIn `scripts/install-cuis-ui-packages.st` y elegí el directorio del repo.
+2. Abrí el browser:
+
+   ```smalltalk
+   IdeBrowserWindow open
+   ```
+
+3. Explora packages | clases | protocolos/métodos y probá las quick actions.
 
 El script vive en `scripts/install-cuis-ui-packages.st` para volver a instalar los packages cuando sincronices el repo.
 
@@ -31,14 +37,12 @@ El script vive en `scripts/install-cuis-ui-packages.st` para volver a instalar l
 - `CuisUI-IDE-Core.pck.st`: morphs del editor, tema, overlay, gutter y controladores de quick actions.
 - `CuisUI-IDE-Browser.pck.st`: `IdeBrowserModel`, `IdeBrowserWindow` y wrappers de árbol/lista.
 - `CuisUI-IDE-Tests.pck.st`: suite automatizada con doubles (`IdeFakeKeyboardEvent`, `IdeFakeQuickActionProvider`, etc.).
-- `scripts/install-cuis-ui-packages.st`: script interactivo para instalar los packages desde una imagen limpia.
-- `SETUP.md`: checklist operativo y tips para trabajar con UIs en Cuis.
-- `docs/IDE-MVP-ARCHITECTURE.md`: decisión arquitectónica y alcance del MVP.
+- `scripts/install-cuis-ui-packages.st`: fileIn interactivo para instalar Core, Browser y Tests.
 
 ## Flujo de trabajo recomendado
 
-1. Editá y prototipá **dentro de la imagen** (Browser, Workspace o herramientas MCP).
-2. Ejecutá los tests:
+1. Editá en la imagen (Browser o Workspace).
+2. Tests rápidos:
 
    ```smalltalk
    #(IdeBrowserModelTest IdeBrowserWindowTest IdeMethodBreakpointActionProviderTest
@@ -46,24 +50,16 @@ El script vive en `scripts/install-cuis-ui-packages.st` para volver a instalar l
      do: [:each | (TestSuite forTestCaseClass: (Smalltalk at: each)) run ].
    ```
 
-3. Guardá los packages antes de volver a git:
+3. Persistí antes de git:
 
    ```smalltalk
-   (CodePackage installedPackages at: 'CuisUI-IDE-Core') save.
-   (CodePackage installedPackages at: 'CuisUI-IDE-Browser') save.
-   (CodePackage installedPackages at: 'CuisUI-IDE-Tests') save.
+   #( 'CuisUI-IDE-Core' 'CuisUI-IDE-Browser' 'CuisUI-IDE-Tests' )
+     do: [:pkg | (CodePackage installedPackages at: pkg) save ].
    ```
 
-4. Versioná los `.pck.st` resultantes.
+4. `git status`, `git commit`, `git push`.
 
-## Documentación útil
+## Estado actual
 
-- [`SETUP.md`](SETUP.md): rutina diaria para validar la imagen y prototipar morphs.
-- [`docs/IDE-MVP-ARCHITECTURE.md`](docs/IDE-MVP-ARCHITECTURE.md): desapila objetivos, componentes y roadmap.
-- [`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md): guía paso a paso para preparar la imagen, correr el script de instalación y publicar cambios.
-
-## Checkpoint de referencia
-
-- Commit base estable: `98e950c`.
-- `IdeBrowserWindow open` muestra el browser sin íconos pero con los tres paneles funcionales.
-- La suite completa (`CuisUI-IDE-Tests`) reporta `35` tests verdes.
+- `IdeBrowserWindow open` presenta los tres paneles y editor con gutter.
+- Suite (`CuisUI-IDE-Tests`) hoy: `35` tests verdes.
