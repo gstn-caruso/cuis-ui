@@ -1,0 +1,10 @@
+.DS_Store
+*.changes
+*.image
+*.log
+*.user
+.runtime/
+tmp/
+.atl/
+CLAUDE.md
+AGENTS.md
