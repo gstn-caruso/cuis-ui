@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 4 April 2026 at 11:47:17 pm'!
+'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 10:30:17 pm'!
 'Description '!
-!provides: 'CuisUI-IDE-Tests' 1 31!
+!provides: 'CuisUI-IDE-Tests' 1 34!
 SystemOrganization addCategory: #'CuisUI-IDE-Tests'!
 
 
@@ -62,6 +62,16 @@ TestCase subclass: #IdeBrowserWindowTest
 	category: 'CuisUI-IDE-Tests'!
 !classDefinition: 'IdeBrowserWindowTest class' category: #'CuisUI-IDE-Tests'!
 IdeBrowserWindowTest class
+	instanceVariableNames: ''!
+
+!classDefinition: #IdeGoToDefinitionAnalyzerTest category: #'CuisUI-IDE-Tests'!
+TestCase subclass: #IdeGoToDefinitionAnalyzerTest
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'CuisUI-IDE-Tests'!
+!classDefinition: 'IdeGoToDefinitionAnalyzerTest class' category: #'CuisUI-IDE-Tests'!
+IdeGoToDefinitionAnalyzerTest class
 	instanceVariableNames: ''!
 
 !classDefinition: #IdeMethodBreakpointActionProviderTest category: #'CuisUI-IDE-Tests'!
@@ -237,6 +247,18 @@ testCanSelectAClassByNameEvenWhenTheListIsIndented
 	self assert: browser selectedClass equals: SortedCollection.
 	self assert: browser classListIndex > 0! !
 
+!IdeBrowserModelTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 22:03:41'!
+testFocusOnBehaviorSelectsRequestedMethod
+
+	| browser |
+	browser := IdeBrowserModel new.
+	browser focusOnBehavior: IdeBrowserSampleClass selector: #alphaTwo.
+
+	self assert: browser selectedClass equals: IdeBrowserSampleClass.
+	self assert: browser selectedMessageName equals: #alphaTwo.
+	self assert: browser selectedMethodTreeItem notNil.
+	self assert: browser selectedMethodTreeItem item equals: #alphaTwo! !
+
 !IdeBrowserModelTest methodsFor: 'tests' stamp: 'GC 4/Apr/2026 23:45:21'!
 testGroupsMethodsByProtocol
 
@@ -269,6 +291,15 @@ testPackageTreeGroupsPackagesByPrefix
 	self assert: (childNames includes: 'Arrayed').
 	self assert: (childNames includes: 'Streams').
 	self assert: (childNames includes: 'Sequenceable')! !
+
+!IdeBrowserModelTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 17:33:00'!
+testSelectedClassOrMetaClassReflectsMetaSelection
+
+	| browser |
+	browser := self browserOnSampleClass.
+	self assert: browser selectedClassOrMetaClass equals: IdeBrowserSampleClass.
+	browser focusOnBehavior: IdeBrowserSampleClass class selector: nil.
+	self assert: browser selectedClassOrMetaClass equals: IdeBrowserSampleClass class! !
 
 !IdeBrowserModelTest methodsFor: 'tests' stamp: 'GC 4/Apr/2026 23:45:21'!
 testSelectingAMethodShowsItsSource
@@ -392,6 +423,16 @@ testOnBuildsAWindowForAModel
 	self assert: window model == model.
 	self assert: window codePaneMorph notNil.
 	self assert: window label equals: 'IDE Browser'! !
+
+!IdeBrowserWindowTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 17:33:00'!
+testOnClassSelectorPositionsInitialSelection
+
+	| window model |
+	window := IdeBrowserWindow onClass: IdeBrowserSampleClass selector: #alphaOne.
+	model := window model.
+
+	self assert: model selectedClass equals: IdeBrowserSampleClass.
+	self assert: model selectedMessageName equals: #alphaOne! !
 
 !IdeBrowserWindowTest methodsFor: 'tests' stamp: 'GC 4/Apr/2026 23:46:11'!
 testOpensSelectingARealPackage
@@ -551,6 +592,126 @@ sendShiftReturnTo: aMorph
 		stamp: Time localMillisecondClock.
 	event sendEventTo: aMorph.
 	^ event! !
+
+!IdeGoToDefinitionAnalyzerTest methodsFor: 'helpers' stamp: 'GC 11/Apr/2026 22:26:06'!
+analyzeMethod: methodSelector of: aClass substring: substring occurrence: occurrence context: context
+
+	| source index start |
+	source := aClass sourceCodeAt: methodSelector.
+	start := 1.
+	1 to: occurrence do: [:each |
+		index := source indexOfSubCollection: substring startingAt: start.
+		self assert: index > 0 description: 'Substring not found'.
+		start := index + 1 ].
+	^ IdeGoToDefinitionAnalyzer
+		selectorAndReceiverFor: source
+		index: index
+		context: context! !
+
+!IdeGoToDefinitionAnalyzerTest methodsFor: 'helpers' stamp: 'GC 11/Apr/2026 17:49:26'!
+analyzeSource: source substring: substring context: context
+
+	| index |
+	index := source indexOfSubCollection: substring startingAt: 1.
+	self assert: index > 0.
+	^ IdeGoToDefinitionAnalyzer
+		selectorAndReceiverFor: source
+		index: index
+		context: context! !
+
+!IdeGoToDefinitionAnalyzerTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 22:26:13'!
+testDetectsCascadeMessage
+
+	| result |
+	result := self
+		analyzeMethod: #error:
+		of: ProtoObject
+		substring: 'nextPutAll:'
+		occurrence: 2
+		context: ProtoObject.
+	self assert: result first equals: #nextPutAll:.
+	self assert: result second isNil! !
+
+!IdeGoToDefinitionAnalyzerTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 17:49:26'!
+testDetectsClassReceiver
+
+	| source result |
+	source := 'example
+	Color black'.
+	result := self analyzeSource: source substring: 'black' context: Object.
+	self assert: result first equals: #black.
+	self assert: result second equals: Color class! !
+
+!IdeGoToDefinitionAnalyzerTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 17:49:26'!
+testDetectsKeywordSelector
+
+	| source result |
+	source := 'example
+	value ifTrue: [ 1 ] ifFalse: [ 2 ]'.
+	result := self analyzeSource: source substring: 'ifTrue:' context: Object.
+	self assert: result first equals: #ifTrue:ifFalse:.
+	self assert: result second isNil! !
+
+!IdeGoToDefinitionAnalyzerTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 22:29:55'!
+testDetectsLongKeywordOnSelf
+
+	| result |
+	result := self
+		analyzeMethod: #printAsIEEE32BitPrecisionFloatOn:base:
+		of: Float
+		substring: 'absPrintOn:'
+		occurrence: 2
+		context: Float.
+	self assert: result first equals: #absPrintOn:base:mantissaSignificantBits:.
+	self assert: result second equals: Float! !
+
+!IdeGoToDefinitionAnalyzerTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 22:27:33'!
+testDetectsLongKeywordOnUnknownReceiver
+
+	| result |
+	result := self
+		analyzeMethod: #arcTo:radius:angleOfXAxis:largeFlag:sweepFlag:
+		of: AbstractVectorCanvas
+		substring: 'arcTo:'
+		occurrence: 6
+		context: AbstractVectorCanvas.
+	self assert: result first equals: #arcTo:radius:angleOfXAxis:largeFlag:sweepFlag:.
+	self assert: result second isNil! !
+
+!IdeGoToDefinitionAnalyzerTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 17:49:26'!
+testDetectsSelfReceiver
+
+	| source context result |
+	source := 'example
+	self alphaOne'.
+	context := IdeBrowserSampleClass.
+	result := self analyzeSource: source substring: 'alphaOne' context: context.
+	self assert: result first equals: #alphaOne.
+	self assert: result second equals: context! !
+
+!IdeGoToDefinitionAnalyzerTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 17:49:26'!
+testDetectsSuperReceiver
+
+	| source context result |
+	source := 'example
+	super at: index'.
+	context := ArrayedCollection.
+	result := self analyzeSource: source substring: 'at:' context: context.
+	self assert: result first equals: #at:.
+	self assert: result second equals: context superclass! !
+
+!IdeGoToDefinitionAnalyzerTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 22:28:43'!
+testDetectsSuperSendInRealMethod
+
+	| result |
+	result := self
+		analyzeMethod: #printOn:
+		of: Array
+		substring: 'printOn:'
+		occurrence: 2
+		context: Array.
+	self assert: result first equals: #printOn:.
+	self assert: result second equals: ArrayedCollection! !
 
 !IdeMethodBreakpointActionProviderTest methodsFor: 'running' stamp: 'GC 4/Apr/2026 03:44:18'!
 tearDown

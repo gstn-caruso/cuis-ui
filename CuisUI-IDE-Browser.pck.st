@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 4 April 2026 at 11:47:17 pm'!
+'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 10:30:17 pm'!
 'Description '!
-!provides: 'CuisUI-IDE-Browser' 1 20!
+!provides: 'CuisUI-IDE-Browser' 1 24!
 !requires: 'CuisUI-IDE-Core' 1 0 nil!
 SystemOrganization addCategory: #'CuisUI-IDE-Browser'!
 
@@ -56,7 +56,7 @@ IdeProtocolWrapper class
 	instanceVariableNames: ''!
 
 
-!IdeBrowserSampleClass methodsFor: 'alpha' stamp: 'GC 4/Apr/2026 23:47:08'!
+!IdeBrowserSampleClass methodsFor: 'alpha' stamp: 'GC 11/Apr/2026 22:30:10'!
 alphaOne
 	^ 'alpha-one'! !
 
@@ -264,9 +264,15 @@ browser
 selectedClass
 	^ selectedClassName ifNotNil: [ Smalltalk at: selectedClassName asSymbol ifAbsent: [ nil ] ]! !
 
-!IdeBrowserModel methodsFor: 'accessing' stamp: 'GC 4/Apr/2026 03:55:59'!
+!IdeBrowserModel methodsFor: 'accessing' stamp: 'GC 11/Apr/2026 17:32:27'!
 selectedClassOrMetaClass
-	^ self selectedClass! !
+
+	| baseClass |
+	baseClass := self selectedClass.
+	baseClass ifNil: [ ^ nil ].
+	(browser metaClassIndicated and: [ baseClass notNil ])
+		ifTrue: [ ^ baseClass class ].
+	^ baseClass! !
 
 !IdeBrowserModel methodsFor: 'accessing' stamp: 'GC 4/Apr/2026 03:55:59'!
 selectedMessageName
@@ -277,20 +283,22 @@ selectedPackageName
 
 	^ selectedPackageName! !
 
-!IdeBrowserModel methodsFor: 'method list' stamp: 'GC 4/Apr/2026 03:55:59'!
+!IdeBrowserModel methodsFor: 'method list' stamp: 'GC 11/Apr/2026 17:32:36'!
 methodRoots
-	| class |
-	class := self selectedClass.
-	class ifNil: [ ^ #() ].
-	^ (class methodCategories asSortedCollection collect: [:each |
+
+	| behavior |
+	behavior := self selectedClassOrMetaClass.
+	behavior ifNil: [ ^ #() ].
+	^ (behavior methodCategories asSortedCollection collect: [:each |
 		IdeProtocolWrapper with: each model: self ]) asArray! !
 
-!IdeBrowserModel methodsFor: 'method list' stamp: 'GC 4/Apr/2026 03:55:59'!
+!IdeBrowserModel methodsFor: 'method list' stamp: 'GC 11/Apr/2026 17:32:36'!
 methodWrappersForProtocol: aProtocolName
-	| class |
-	class := self selectedClass.
-	class ifNil: [ ^ #() ].
-	^ ((class selectorsInCategory: aProtocolName) asSortedCollection collect: [:each |
+
+	| behavior |
+	behavior := self selectedClassOrMetaClass.
+	behavior ifNil: [ ^ #() ].
+	^ ((behavior selectorsInCategory: aProtocolName) asSortedCollection collect: [:each |
 		IdeMethodWrapper selector: each protocol: aProtocolName model: self ]) asArray! !
 
 !IdeBrowserModel methodsFor: 'method list' stamp: 'GC 4/Apr/2026 03:55:59'!
@@ -386,6 +394,12 @@ stylingClassContext
 		ifTrue: [ nil ]
 		ifFalse: [ self selectedClassOrMetaClass ]! !
 
+!IdeBrowserModel methodsFor: 'private' stamp: 'GC 11/Apr/2026 22:03:33'!
+refreshMethodTreeSelection
+
+	selectedMethodTreeItem := self wrapperForSelectedMethod.
+	^ selectedMethodTreeItem! !
+
 !IdeBrowserModel methodsFor: 'private' stamp: 'GC 4/Apr/2026 22:43:08'!
 synchronizeFromBrowser
 
@@ -397,6 +411,68 @@ synchronizeFromBrowser
 	classListIndex := browser classListIndex.
 	selectedProtocolName := browser selectedMessageCategoryName.
 	selectedMethodSelector := browser selectedMessageName! !
+
+!IdeBrowserModel methodsFor: 'private' stamp: 'GC 11/Apr/2026 22:03:33'!
+wrapperForSelectedMethod
+
+	| selector behavior protocol roots protocolWrapper |
+	selector := selectedMethodSelector.
+	selector ifNil: [ ^ nil ].
+	behavior := self selectedClassOrMetaClass.
+	behavior ifNil: [ ^ nil ].
+	protocol := selectedProtocolName
+		ifNil: [ behavior organization
+			categoryOfElement: selector
+			ifAbsent: [ nil ] ].
+	roots := self methodRoots.
+	protocolWrapper := protocol
+		ifNil: [ roots detect: [:each |
+			(each contents anySatisfy: [:method | method item = selector ]) ]
+			ifNone: [ nil ] ]
+		ifNotNil: [ roots detect: [:each | each item = protocol ] ifNone: [ nil ] ].
+	protocolWrapper ifNil: [ ^ nil ].
+	^ protocolWrapper contents
+		detect: [:methodWrapper | methodWrapper item = selector ]
+		ifNone: [ nil ]! !
+
+!IdeBrowserModel methodsFor: 'navigation' stamp: 'GC 11/Apr/2026 22:03:33'!
+focusOnBehavior: aBehavior selector: aSelector
+
+	aBehavior ifNil: [ ^ self ].
+	browser setClass: aBehavior selector: aSelector.
+	self synchronizeFromBrowser.
+	self refreshMethodTreeSelection.
+	self changed: #selectedPackageName.
+	self changed: #packageListIndex.
+	self changed: #classList.
+	self changed: #classListIndex.
+	self changed: #methodRoots.
+	self changed: #selectedMethodTreeItem.
+	self acceptedContentsChanged! !
+
+!IdeBrowserModel methodsFor: 'navigation' stamp: 'GC 11/Apr/2026 17:32:43'!
+goToDefinition
+
+	(selectedMethodTreeItem isKindOf: IdeMethodWrapper)
+		ifTrue: [ ^ self goToDefinitionFromMethod: selectedMethodTreeItem ].
+	^ self goToDefinitionFromSelectedClass! !
+
+!IdeBrowserModel methodsFor: 'navigation' stamp: 'GC 11/Apr/2026 17:32:43'!
+goToDefinitionFromMethod: aMethodWrapper
+
+	| selector |
+	aMethodWrapper ifNil: [ ^ self goToDefinitionFromSelectedClass ].
+	selector := aMethodWrapper item.
+	selector ifNil: [ ^ self goToDefinitionFromSelectedClass ].
+	IdeBrowserWindow openImplementorSelectionFor: selector! !
+
+!IdeBrowserModel methodsFor: 'navigation' stamp: 'GC 11/Apr/2026 17:32:43'!
+goToDefinitionFromSelectedClass
+
+	| behavior |
+	behavior := self selectedClassOrMetaClass.
+	behavior ifNil: [ ^ self ].
+	IdeBrowserWindow openOnClass: behavior selector: nil! !
 
 !IdeBrowserWindow methodsFor: 'GUI building' stamp: 'GC 4/Apr/2026 04:00:25'!
 buildClassList
@@ -456,6 +532,24 @@ update: anEvent
 	super update: anEvent.
 	anEvent = #selectedMethodTreeItem ifTrue: [ self methodSelectionChanged ]! !
 
+!IdeBrowserWindow methodsFor: 'menu commands' stamp: 'GC 11/Apr/2026 17:32:46'!
+browseMethodFull
+
+	^ self goToDefinition! !
+
+!IdeBrowserWindow methodsFor: 'menu commands' stamp: 'GC 11/Apr/2026 17:32:46'!
+goToDefinition
+
+	^ model goToDefinition! !
+
+!IdeBrowserWindow class methodsFor: 'instance creation' stamp: 'GC 11/Apr/2026 17:32:53'!
+onClass: aBehavior selector: aSelector
+
+	| browserModel |
+	browserModel := IdeBrowserModel new.
+	aBehavior ifNotNil: [ browserModel focusOnBehavior: aBehavior selector: aSelector ].
+	^ self on: browserModel! !
+
 !IdeBrowserWindow class methodsFor: 'instance creation' stamp: 'GC 4/Apr/2026 22:57:23'!
 open
 
@@ -463,6 +557,48 @@ open
 	window := self on: IdeBrowserModel new.
 	window openInWorld.
 	^ window! !
+
+!IdeBrowserWindow class methodsFor: 'instance creation' stamp: 'GC 11/Apr/2026 17:32:53'!
+openOnClass: aBehavior selector: aSelector
+
+	| window |
+	window := self onClass: aBehavior selector: aSelector.
+	window openInWorld.
+	^ window! !
+
+!IdeBrowserWindow class methodsFor: 'navigation' stamp: 'GC 11/Apr/2026 17:32:53'!
+implementorLabelFor: aMethodReference
+
+	^ String streamContents: [:stream |
+		aMethodReference printClassAndSelectorOn: stream ]! !
+
+!IdeBrowserWindow class methodsFor: 'navigation' stamp: 'GC 11/Apr/2026 17:32:53'!
+openImplementorSelectionFor: aSelector
+
+	| implementors |
+	implementors := Smalltalk allImplementorsOf: aSelector.
+	implementors isEmpty ifTrue: [ ^ nil ].
+	implementors size = 1 ifTrue: [ ^ self openOnMethodReference: implementors first ].
+	^ self presentImplementorMenuFor: implementors selector: aSelector! !
+
+!IdeBrowserWindow class methodsFor: 'navigation' stamp: 'GC 11/Apr/2026 17:32:53'!
+openOnMethodReference: aMethodReference
+
+	^ self openOnClass: aMethodReference methodClass selector: aMethodReference selector! !
+
+!IdeBrowserWindow class methodsFor: 'navigation' stamp: 'GC 11/Apr/2026 17:32:53'!
+presentImplementorMenuFor: methodReferences selector: aSelector
+
+	| menu |
+	menu := MenuMorph entitled: 'Implementors of ', aSelector asString.
+	methodReferences do: [:each |
+		menu
+			add: (self implementorLabelFor: each)
+			target: self
+			action: #openOnMethodReference:
+			argumentList: { each } ].
+	menu popUpInWorld.
+	^ menu! !
 
 !IdeMethodWrapper methodsFor: 'accessing' stamp: 'GC 4/Apr/2026 03:55:59'!
 protocolName
