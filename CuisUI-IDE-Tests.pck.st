@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 10:04:00 pm'!
+'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 10:30:17 pm'!
 'Description '!
-!provides: 'CuisUI-IDE-Tests' 1 33!
+!provides: 'CuisUI-IDE-Tests' 1 34!
 SystemOrganization addCategory: #'CuisUI-IDE-Tests'!
 
 
@@ -593,6 +593,21 @@ sendShiftReturnTo: aMorph
 	event sendEventTo: aMorph.
 	^ event! !
 
+!IdeGoToDefinitionAnalyzerTest methodsFor: 'helpers' stamp: 'GC 11/Apr/2026 22:26:06'!
+analyzeMethod: methodSelector of: aClass substring: substring occurrence: occurrence context: context
+
+	| source index start |
+	source := aClass sourceCodeAt: methodSelector.
+	start := 1.
+	1 to: occurrence do: [:each |
+		index := source indexOfSubCollection: substring startingAt: start.
+		self assert: index > 0 description: 'Substring not found'.
+		start := index + 1 ].
+	^ IdeGoToDefinitionAnalyzer
+		selectorAndReceiverFor: source
+		index: index
+		context: context! !
+
 !IdeGoToDefinitionAnalyzerTest methodsFor: 'helpers' stamp: 'GC 11/Apr/2026 17:49:26'!
 analyzeSource: source substring: substring context: context
 
@@ -603,6 +618,19 @@ analyzeSource: source substring: substring context: context
 		selectorAndReceiverFor: source
 		index: index
 		context: context! !
+
+!IdeGoToDefinitionAnalyzerTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 22:26:13'!
+testDetectsCascadeMessage
+
+	| result |
+	result := self
+		analyzeMethod: #error:
+		of: ProtoObject
+		substring: 'nextPutAll:'
+		occurrence: 2
+		context: ProtoObject.
+	self assert: result first equals: #nextPutAll:.
+	self assert: result second isNil! !
 
 !IdeGoToDefinitionAnalyzerTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 17:49:26'!
 testDetectsClassReceiver
@@ -622,6 +650,32 @@ testDetectsKeywordSelector
 	value ifTrue: [ 1 ] ifFalse: [ 2 ]'.
 	result := self analyzeSource: source substring: 'ifTrue:' context: Object.
 	self assert: result first equals: #ifTrue:ifFalse:.
+	self assert: result second isNil! !
+
+!IdeGoToDefinitionAnalyzerTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 22:29:55'!
+testDetectsLongKeywordOnSelf
+
+	| result |
+	result := self
+		analyzeMethod: #printAsIEEE32BitPrecisionFloatOn:base:
+		of: Float
+		substring: 'absPrintOn:'
+		occurrence: 2
+		context: Float.
+	self assert: result first equals: #absPrintOn:base:mantissaSignificantBits:.
+	self assert: result second equals: Float! !
+
+!IdeGoToDefinitionAnalyzerTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 22:27:33'!
+testDetectsLongKeywordOnUnknownReceiver
+
+	| result |
+	result := self
+		analyzeMethod: #arcTo:radius:angleOfXAxis:largeFlag:sweepFlag:
+		of: AbstractVectorCanvas
+		substring: 'arcTo:'
+		occurrence: 6
+		context: AbstractVectorCanvas.
+	self assert: result first equals: #arcTo:radius:angleOfXAxis:largeFlag:sweepFlag:.
 	self assert: result second isNil! !
 
 !IdeGoToDefinitionAnalyzerTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 17:49:26'!
@@ -645,6 +699,19 @@ testDetectsSuperReceiver
 	result := self analyzeSource: source substring: 'at:' context: context.
 	self assert: result first equals: #at:.
 	self assert: result second equals: context superclass! !
+
+!IdeGoToDefinitionAnalyzerTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 22:28:43'!
+testDetectsSuperSendInRealMethod
+
+	| result |
+	result := self
+		analyzeMethod: #printOn:
+		of: Array
+		substring: 'printOn:'
+		occurrence: 2
+		context: Array.
+	self assert: result first equals: #printOn:.
+	self assert: result second equals: ArrayedCollection! !
 
 !IdeMethodBreakpointActionProviderTest methodsFor: 'running' stamp: 'GC 4/Apr/2026 03:44:18'!
 tearDown
