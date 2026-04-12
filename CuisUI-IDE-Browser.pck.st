@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 9:52:44 pm'!
+'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 9:57:43 pm'!
 'Description '!
-!provides: 'CuisUI-IDE-Browser' 1 21!
+!provides: 'CuisUI-IDE-Browser' 1 22!
 !requires: 'CuisUI-IDE-Core' 1 0 nil!
 SystemOrganization addCategory: #'CuisUI-IDE-Browser'!
 
@@ -56,7 +56,7 @@ IdeProtocolWrapper class
 	instanceVariableNames: ''!
 
 
-!IdeBrowserSampleClass methodsFor: 'alpha' stamp: 'GC 11/Apr/2026 21:52:29'!
+!IdeBrowserSampleClass methodsFor: 'alpha' stamp: 'GC 11/Apr/2026 21:57:37'!
 alphaOne
 	^ 'alpha-one'! !
 
