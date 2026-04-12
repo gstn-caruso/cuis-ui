@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 4 April 2026 at 11:47:16 pm'!
+'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 9:52:44 pm'!
 'Description '!
-!provides: 'CuisUI-IDE-Core' 1 19!
+!provides: 'CuisUI-IDE-Core' 1 20!
 SystemOrganization addCategory: #'CuisUI-IDE-Core'!
 
 
@@ -23,6 +23,16 @@ Object subclass: #IdeEditorTheme
 !classDefinition: 'IdeEditorTheme class' category: #'CuisUI-IDE-Core'!
 IdeEditorTheme class
 	instanceVariableNames: 'currentStyle'!
+
+!classDefinition: #IdeGoToDefinitionAnalyzer category: #'CuisUI-IDE-Core'!
+Object subclass: #IdeGoToDefinitionAnalyzer
+	instanceVariableNames: 'source context index methodNode messageNode'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'CuisUI-IDE-Core'!
+!classDefinition: 'IdeGoToDefinitionAnalyzer class' category: #'CuisUI-IDE-Core'!
+IdeGoToDefinitionAnalyzer class
+	instanceVariableNames: ''!
 
 !classDefinition: #IdeMethodBreakpointActionProvider category: #'CuisUI-IDE-Core'!
 Object subclass: #IdeMethodBreakpointActionProvider
@@ -338,6 +348,110 @@ activeOccurrenceColor
 	^ self isDarkStyle
 		ifTrue: [ (Color r: 0.33 g: 0.40 b: 0.49) alpha: 0.82 ]
 		ifFalse: [ (Color r: 0.66 g: 0.78 b: 0.93) alpha: 0.92 ]! !
+
+!IdeGoToDefinitionAnalyzer methodsFor: 'accessing' stamp: 'GC 11/Apr/2026 17:48:54'!
+context: aBehavior
+
+	context := aBehavior! !
+
+!IdeGoToDefinitionAnalyzer methodsFor: 'accessing' stamp: 'GC 11/Apr/2026 17:48:54'!
+index: anInteger
+
+	index := anInteger! !
+
+!IdeGoToDefinitionAnalyzer methodsFor: 'accessing' stamp: 'GC 11/Apr/2026 17:48:54'!
+source: aString
+
+	source := aString! !
+
+!IdeGoToDefinitionAnalyzer methodsFor: 'analysis' stamp: 'GC 11/Apr/2026 17:48:54'!
+analyze
+
+	| parsed |
+	parsed := self parseMethodNode.
+	parsed ifNil: [ ^ nil ].
+	methodNode := parsed.
+	messageNode := self messageNodeAtCursor.
+	messageNode ifNil: [ ^ nil ].
+	^ { self selectorSymbol. self receiverBehavior }! !
+
+!IdeGoToDefinitionAnalyzer methodsFor: 'analysis' stamp: 'GC 11/Apr/2026 17:48:54'!
+messageNodeAtCursor
+
+	methodNode ifNil: [ ^ nil ].
+	methodNode nodesDo: [:node |
+		(node isMessageNode and: [ self pointIsWithinSelectorOf: node ]) ifTrue: [ ^ node ] ].
+	^ nil! !
+
+!IdeGoToDefinitionAnalyzer methodsFor: 'analysis' stamp: 'GC 11/Apr/2026 17:48:54'!
+parseMethodNode
+
+	| parser behavior |
+	source ifNil: [ ^ nil ].
+	behavior := context ifNil: [ Object ].
+	parser := Parser new.
+	[^ parser
+		parse: source readStream
+		class: behavior
+		noPattern: false
+		context: nil
+		notifying: nil
+		ifFail: [ ^ nil ] ] on: Error do: [ ^ nil ]! !
+
+!IdeGoToDefinitionAnalyzer methodsFor: 'analysis' stamp: 'GC 11/Apr/2026 17:48:54'!
+pointIsWithinSelectorOf: aMessageNode
+
+	| ranges |
+	ranges := aMessageNode keywordRanges.
+	(ranges isNil or: [ ranges isEmpty ]) ifTrue: [
+		| fullRange |
+		fullRange := methodNode rangeForNode: aMessageNode ifAbsent: [ nil ].
+		fullRange ifNil: [ ^ false ].
+		^ fullRange first <= index and: [ index <= fullRange last ] ].
+	^ ranges anySatisfy: [:each | each first <= index and: [ index <= each last ]]! !
+
+!IdeGoToDefinitionAnalyzer methodsFor: 'analysis' stamp: 'GC 11/Apr/2026 17:48:54'!
+receiverBehavior
+
+	| receiver name potential |
+	messageNode ifNil: [ ^ nil ].
+	receiver := messageNode receiver.
+	receiver ifNil: [ ^ nil ].
+	(receiver respondsTo: #name) ifFalse: [ ^ nil ].
+	name := receiver name.
+	name ifNil: [ ^ nil ].
+	name = 'self' ifTrue: [ ^ context ].
+	name = 'super' ifTrue: [ ^ context ifNotNil: [ context superclass ] ].
+	(self looksLikeGlobalClassName: name) ifTrue: [
+		potential := Smalltalk at: name asSymbol ifAbsent: [ nil ].
+		(potential isBehavior)
+			ifTrue: [ ^ potential class ]].
+	^ nil! !
+
+!IdeGoToDefinitionAnalyzer methodsFor: 'analysis' stamp: 'GC 11/Apr/2026 17:48:54'!
+selectorSymbol
+
+	| selectorNode |
+	messageNode ifNil: [ ^ nil ].
+	selectorNode := messageNode selector.
+	selectorNode ifNil: [ ^ nil ].
+	^ selectorNode isSymbol
+		ifTrue: [ selectorNode ]
+		ifFalse: [ selectorNode key ]! !
+
+!IdeGoToDefinitionAnalyzer methodsFor: 'private' stamp: 'GC 11/Apr/2026 17:48:54'!
+looksLikeGlobalClassName: aString
+
+	^ aString isEmpty not and: [ aString first isUppercase ]! !
+
+!IdeGoToDefinitionAnalyzer class methodsFor: 'instance creation' stamp: 'GC 11/Apr/2026 17:48:54'!
+selectorAndReceiverFor: aString index: anInteger context: aBehavior
+
+	^ self new
+		source: aString;
+		index: anInteger;
+		context: aBehavior;
+		analyze! !
 
 !IdeMethodBreakpointActionProvider methodsFor: 'actions' stamp: 'GC 4/Apr/2026 03:44:36'!
 actionsFor: aContext
@@ -1344,3 +1458,17 @@ sendEventTo: aMorph
 	keyEventType == #keyUp ifTrue: [ 
 		aMorph processKeyUp: self.
 		^ self ]! !
+
+!SmalltalkEditor methodsFor: '*CuisUI-IDE-Core' stamp: 'GC 11/Apr/2026 21:49:43'!
+ideGoToDefinitionTarget
+
+	| provider |
+	provider := self codeProvider.
+	(provider respondsTo: #isEditingMethod) ifFalse: [ ^ nil ].
+	provider isEditingMethod ifFalse: [ ^ nil ].
+	^ IdeGoToDefinitionAnalyzer
+		selectorAndReceiverFor: self text asString
+		index: self startIndex
+		context: ((provider respondsTo: #selectedClassOrMetaClass)
+			ifTrue: [ provider selectedClassOrMetaClass ]
+			ifFalse: [ nil ])! !
