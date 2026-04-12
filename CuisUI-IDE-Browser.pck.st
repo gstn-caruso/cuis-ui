@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 9:57:43 pm'!
+'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 10:03:59 pm'!
 'Description '!
-!provides: 'CuisUI-IDE-Browser' 1 22!
+!provides: 'CuisUI-IDE-Browser' 1 23!
 !requires: 'CuisUI-IDE-Core' 1 0 nil!
 SystemOrganization addCategory: #'CuisUI-IDE-Browser'!
 
@@ -56,7 +56,7 @@ IdeProtocolWrapper class
 	instanceVariableNames: ''!
 
 
-!IdeBrowserSampleClass methodsFor: 'alpha' stamp: 'GC 11/Apr/2026 21:57:37'!
+!IdeBrowserSampleClass methodsFor: 'alpha' stamp: 'GC 11/Apr/2026 22:03:54'!
 alphaOne
 	^ 'alpha-one'! !
 
@@ -394,6 +394,12 @@ stylingClassContext
 		ifTrue: [ nil ]
 		ifFalse: [ self selectedClassOrMetaClass ]! !
 
+!IdeBrowserModel methodsFor: 'private' stamp: 'GC 11/Apr/2026 22:03:33'!
+refreshMethodTreeSelection
+
+	selectedMethodTreeItem := self wrapperForSelectedMethod.
+	^ selectedMethodTreeItem! !
+
 !IdeBrowserModel methodsFor: 'private' stamp: 'GC 4/Apr/2026 22:43:08'!
 synchronizeFromBrowser
 
@@ -406,13 +412,36 @@ synchronizeFromBrowser
 	selectedProtocolName := browser selectedMessageCategoryName.
 	selectedMethodSelector := browser selectedMessageName! !
 
-!IdeBrowserModel methodsFor: 'navigation' stamp: 'GC 11/Apr/2026 17:32:43'!
+!IdeBrowserModel methodsFor: 'private' stamp: 'GC 11/Apr/2026 22:03:33'!
+wrapperForSelectedMethod
+
+	| selector behavior protocol roots protocolWrapper |
+	selector := selectedMethodSelector.
+	selector ifNil: [ ^ nil ].
+	behavior := self selectedClassOrMetaClass.
+	behavior ifNil: [ ^ nil ].
+	protocol := selectedProtocolName
+		ifNil: [ behavior organization
+			categoryOfElement: selector
+			ifAbsent: [ nil ] ].
+	roots := self methodRoots.
+	protocolWrapper := protocol
+		ifNil: [ roots detect: [:each |
+			(each contents anySatisfy: [:method | method item = selector ]) ]
+			ifNone: [ nil ] ]
+		ifNotNil: [ roots detect: [:each | each item = protocol ] ifNone: [ nil ] ].
+	protocolWrapper ifNil: [ ^ nil ].
+	^ protocolWrapper contents
+		detect: [:methodWrapper | methodWrapper item = selector ]
+		ifNone: [ nil ]! !
+
+!IdeBrowserModel methodsFor: 'navigation' stamp: 'GC 11/Apr/2026 22:03:33'!
 focusOnBehavior: aBehavior selector: aSelector
 
 	aBehavior ifNil: [ ^ self ].
 	browser setClass: aBehavior selector: aSelector.
-	selectedMethodTreeItem := nil.
 	self synchronizeFromBrowser.
+	self refreshMethodTreeSelection.
 	self changed: #selectedPackageName.
 	self changed: #packageListIndex.
 	self changed: #classList.

@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 9:57:43 pm'!
+'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 10:04:00 pm'!
 'Description '!
-!provides: 'CuisUI-IDE-Tests' 1 32!
+!provides: 'CuisUI-IDE-Tests' 1 33!
 SystemOrganization addCategory: #'CuisUI-IDE-Tests'!
 
 
@@ -247,7 +247,7 @@ testCanSelectAClassByNameEvenWhenTheListIsIndented
 	self assert: browser selectedClass equals: SortedCollection.
 	self assert: browser classListIndex > 0! !
 
-!IdeBrowserModelTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 17:33:00'!
+!IdeBrowserModelTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 22:03:41'!
 testFocusOnBehaviorSelectsRequestedMethod
 
 	| browser |
@@ -255,7 +255,9 @@ testFocusOnBehaviorSelectsRequestedMethod
 	browser focusOnBehavior: IdeBrowserSampleClass selector: #alphaTwo.
 
 	self assert: browser selectedClass equals: IdeBrowserSampleClass.
-	self assert: browser selectedMessageName equals: #alphaTwo! !
+	self assert: browser selectedMessageName equals: #alphaTwo.
+	self assert: browser selectedMethodTreeItem notNil.
+	self assert: browser selectedMethodTreeItem item equals: #alphaTwo! !
 
 !IdeBrowserModelTest methodsFor: 'tests' stamp: 'GC 4/Apr/2026 23:45:21'!
 testGroupsMethodsByProtocol
