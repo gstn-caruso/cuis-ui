@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 10:30:17 pm'!
+'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 11:12:26 pm'!
 'Description '!
-!provides: 'CuisUI-IDE-Tests' 1 34!
+!provides: 'CuisUI-IDE-Tests' 1 38!
 SystemOrganization addCategory: #'CuisUI-IDE-Tests'!
 
 
@@ -413,7 +413,7 @@ dsadsd'.
 
 	self assert: window codePaneMorph gutter currentLineCount equals: 7! !
 
-!IdeBrowserWindowTest methodsFor: 'tests' stamp: 'GC 4/Apr/2026 23:46:11'!
+!IdeBrowserWindowTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 23:05:43'!
 testOnBuildsAWindowForAModel
 
 	| model window |
@@ -548,6 +548,52 @@ testShiftReturnUsesEditorCommandInsideIdeBrowser
 	self deny: preferenceWasTriggered.
 	self assert: event wasHandled.
 	self assert: editor actualContents asString equals: 'first line', String newLineString, String newLineString, 'second line'! !
+
+!IdeBrowserWindowTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 23:12:11'!
+testWindowLabelUpdatesForClassDefinition
+
+	| model window |
+	model := IdeBrowserModel new.
+	window := IdeBrowserWindow on: model.
+
+	model focusOnBehavior: Object selector: nil.
+
+	self assert: window label equals: 'Class definition - Object'! !
+
+!IdeBrowserWindowTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 22:53:46'!
+testWindowLabelUpdatesForInstanceMethod
+
+	| model window |
+	model := IdeBrowserModel new.
+	window := IdeBrowserWindow on: model.
+
+	model focusOnBehavior: Object selector: #printString.
+
+	self assert: window label equals: 'Object>>#printString'! !
+
+!IdeBrowserWindowTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 23:05:20'!
+testWindowLabelUpdatesForMetaMethod
+
+	| model window |
+	model := IdeBrowserModel new.
+	window := IdeBrowserWindow on: model.
+
+	model focusOnBehavior: IdeBrowserSampleClass class selector: #classAlpha.
+
+	self assert: window label equals: 'IdeBrowserSampleClass class>>#classAlpha'! !
+
+!IdeBrowserWindowTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 23:01:38'!
+testWindowLabelUpdatesForProtocolSelection
+
+	| model window protocol |
+	model := IdeBrowserModel new.
+	window := IdeBrowserWindow on: model.
+
+	model focusOnBehavior: IdeBrowserSampleClass selector: nil.
+	protocol := model methodRoots first.
+	model selectedMethodTreeItem: protocol.
+
+	self assert: window label equals: 'IdeBrowserSampleClass - alpha'! !
 
 !IdeBrowserWindowTest methodsFor: 'helpers' stamp: 'GC 4/Apr/2026 23:46:11'!
 editorIn: aWindow

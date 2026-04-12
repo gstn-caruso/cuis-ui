@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 10:30:17 pm'!
+'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 11:12:23 pm'!
 'Description '!
-!provides: 'CuisUI-IDE-Browser' 1 24!
+!provides: 'CuisUI-IDE-Browser' 1 28!
 !requires: 'CuisUI-IDE-Core' 1 0 nil!
 SystemOrganization addCategory: #'CuisUI-IDE-Browser'!
 
@@ -67,6 +67,10 @@ alphaTwo
 !IdeBrowserSampleClass methodsFor: 'beta' stamp: 'GC 4/Apr/2026 03:54:52'!
 betaOne
 	^ 'beta-one'! !
+
+!IdeBrowserSampleClass class methodsFor: 'alpha' stamp: 'GC 11/Apr/2026 23:05:11'!
+classAlpha
+	^ 'class-alpha'! !
 
 !IdeBrowserModel methodsFor: 'initialization' stamp: 'GC 4/Apr/2026 22:43:08'!
 initialize
@@ -283,6 +287,11 @@ selectedPackageName
 
 	^ selectedPackageName! !
 
+!IdeBrowserModel methodsFor: 'accessing' stamp: 'GC 11/Apr/2026 23:01:24'!
+selectedProtocolName
+
+	^ selectedProtocolName! !
+
 !IdeBrowserModel methodsFor: 'method list' stamp: 'GC 11/Apr/2026 17:32:36'!
 methodRoots
 
@@ -358,10 +367,13 @@ contents: input notifying: aRequestor
 	self acceptedContentsChanged.
 	^ true! !
 
-!IdeBrowserModel methodsFor: 'testing' stamp: 'GC 4/Apr/2026 19:12:24'!
+!IdeBrowserModel methodsFor: 'testing' stamp: 'GC 11/Apr/2026 23:04:29'!
 isEditingExistingClass
 
-	^ self selectedClass notNil and: [ self selectedMessageName isNil ]! !
+	self selectedClass ifNil: [ ^ false ].
+	self selectedMessageName ifNotNil: [ ^ false ].
+	self selectedProtocolName ifNotNil: [ ^ false ].
+	^ true! !
 
 !IdeBrowserModel methodsFor: 'testing' stamp: 'GC 4/Apr/2026 03:55:59'!
 isEditingMethod
@@ -514,9 +526,25 @@ navigationColumnMorphsWithProportions
 		{ self buildClassList. 0.4 }.
 		{ self buildMethodTree. 0.4 } }! !
 
-!IdeBrowserWindow methodsFor: 'GUI building' stamp: 'GC 4/Apr/2026 16:46:51'!
+!IdeBrowserWindow methodsFor: 'GUI building' stamp: 'GC 11/Apr/2026 23:12:08'!
 windowLabel
-	^ 'IDE Browser'! !
+
+	| behaviorName methodName protocolName |
+	model ifNil: [ ^ 'IDE Browser' ].
+	behaviorName := model selectedClassOrMetaClass
+		ifNotNil: [ :behavior | behavior name asString ].
+	(model isEditingExistingClass)
+		ifTrue: [
+			behaviorName ifNil: [ ^ 'Class definition' ].
+			^ 'Class definition - ', behaviorName ].
+	methodName := model selectedMessageName.
+	methodName ifNotNil: [
+		behaviorName ifNil: [ ^ methodName printString ].
+		^ behaviorName , '>>', methodName printString ].
+	behaviorName ifNil: [ ^ 'IDE Browser' ].
+	protocolName := model selectedProtocolName.
+	protocolName ifNotNil: [ ^ behaviorName , ' - ', protocolName ].
+	^ behaviorName! !
 
 !IdeBrowserWindow methodsFor: 'updating' stamp: 'GC 4/Apr/2026 05:10:05'!
 methodSelectionChanged
@@ -527,10 +555,13 @@ methodSelectionChanged
 	inner startBlinking.
 	self focusCodePaneIfPossible! !
 
-!IdeBrowserWindow methodsFor: 'updating' stamp: 'GC 4/Apr/2026 19:50:11'!
+!IdeBrowserWindow methodsFor: 'updating' stamp: 'GC 11/Apr/2026 22:52:40'!
 update: anEvent
+
 	super update: anEvent.
-	anEvent = #selectedMethodTreeItem ifTrue: [ self methodSelectionChanged ]! !
+	anEvent = #selectedMethodTreeItem ifTrue: [ self methodSelectionChanged ].
+	(#(selectedMethodTreeItem classListIndex selectedPackageName packageListIndex) includes: anEvent)
+		ifTrue: [ self setLabel: self windowLabel ]! !
 
 !IdeBrowserWindow methodsFor: 'menu commands' stamp: 'GC 11/Apr/2026 17:32:46'!
 browseMethodFull
