@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 11:12:26 pm'!
+'From Cuis7.7 [latest update: #7777] on 18 April 2026 at 4:10:36 pm'!
 'Description '!
-!provides: 'CuisUI-IDE-Tests' 1 38!
+!provides: 'CuisUI-IDE-Tests' 1 42!
 SystemOrganization addCategory: #'CuisUI-IDE-Tests'!
 
 
@@ -112,6 +112,16 @@ TestCase subclass: #IdeQuickActionTest
 	category: 'CuisUI-IDE-Tests'!
 !classDefinition: 'IdeQuickActionTest class' category: #'CuisUI-IDE-Tests'!
 IdeQuickActionTest class
+	instanceVariableNames: ''!
+
+!classDefinition: #TonelPackageExporterTest category: #'CuisUI-IDE-Tests'!
+TestCase subclass: #TonelPackageExporterTest
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'CuisUI-IDE-Tests'!
+!classDefinition: 'TonelPackageExporterTest class' category: #'CuisUI-IDE-Tests'!
+TonelPackageExporterTest class
 	instanceVariableNames: ''!
 
 
@@ -444,6 +454,17 @@ testOpensSelectingARealPackage
 	self assert: browser packageListIndex equals: 1.
 	self deny: browser classList isEmpty.
 	self deny: (browser packageList at: browser packageListIndex) = '-- All System --'! !
+
+!IdeBrowserWindowTest methodsFor: 'tests' stamp: 'GC 18/Apr/2026 14:59:36'!
+testPackageListMenuStartsWithExportTonel
+
+	| menuSpec exportEntry |
+	menuSpec := self openBrowserWindow packageListMenuSpec.
+	exportEntry := menuSpec second.
+
+	self assert: exportEntry second equals: 'Export Tonel'.
+	self assert: exportEntry fourth equals: #model.
+	self assert: exportEntry fifth equals: #exportTonel! !
 
 !IdeBrowserWindowTest methodsFor: 'tests' stamp: 'GC 4/Apr/2026 23:46:11'!
 testSelectingAMethodEnablesEditing
@@ -882,3 +903,114 @@ testRemembersIdentityAndLabel
 !IdeQuickActionTest methodsFor: 'tests' stamp: 'GC 4/Apr/2026 05:29:54'!
 testShowsLightbulbAffordanceByDefault
 	self assert: (IdeQuickAction id: #rename label: 'Rename') showsLightbulbAffordance! !
+
+!TonelPackageExporterTest methodsFor: 'tests' stamp: 'GC 18/Apr/2026 15:08:43'!
+testExportsPackageDefinitionAndClassFile
+
+	self withExportDirectoryDo: [:directory |
+		| packageDirectory packageFile classFile |
+		TonelPackageExporter exportPackageNamed: 'CuisUI-IDE-Browser' to: directory.
+		packageDirectory := directory / 'CuisUI-IDE-Browser'.
+		packageFile := packageDirectory // 'package.st'.
+		classFile := packageDirectory // 'IdeBrowserSampleClass.class.st'.
+		self assert: packageDirectory exists.
+		self assert: packageFile exists.
+		self assert: classFile exists.
+		self assert: (packageFile fileContents includesSubString: 'Package {').
+		self assert: (classFile fileContents includesSubString: 'Class {').
+		self assert: (classFile fileContents includesSubString: 'IdeBrowserSampleClass>>alphaOne [')]! !
+
+!TonelPackageExporterTest methodsFor: 'tests' stamp: 'GC 18/Apr/2026 16:10:03'!
+testExportsRootCategoryWithAllSubcategories
+
+	| rootName firstCategory secondCategory firstClass secondClass |
+	rootName := 'TonelRoot'.
+	firstCategory := rootName , '-One'.
+	secondCategory := rootName , '-Two'.
+	firstClass := #TonelRootOneClass.
+	secondClass := #TonelRootTwoClass.
+	[
+		Object subclass: firstClass
+			instanceVariableNames: ''
+			classVariableNames: ''
+			poolDictionaries: ''
+			category: firstCategory.
+		Object subclass: secondClass
+			instanceVariableNames: ''
+			classVariableNames: ''
+			poolDictionaries: ''
+			category: secondCategory.
+		(Smalltalk at: firstClass) compile: 'first
+	^ 1' classified: 'testing'.
+		(Smalltalk at: secondClass) compile: 'second
+	^ 2' classified: 'testing'.
+		self withExportDirectoryDo: [:directory |
+			| packageDirectory firstFile secondFile |
+			TonelPackageExporter exportPackageNamed: rootName to: directory.
+			packageDirectory := directory / rootName.
+			firstFile := packageDirectory // 'TonelRootOneClass.class.st'.
+			secondFile := packageDirectory // 'TonelRootTwoClass.class.st'.
+			self assert: packageDirectory exists.
+			self assert: firstFile exists.
+			self assert: secondFile exists.
+			self assert: (firstFile fileContents includesSubString: 'TonelRootOneClass>>first [').
+			self assert: (secondFile fileContents includesSubString: 'TonelRootTwoClass>>second [') ]
+	] ensure: [
+		(SystemOrganization categories includes: rootName)
+			ifTrue: [ SystemOrganization removeSystemCategory: rootName ] ]! !
+
+!TonelPackageExporterTest methodsFor: 'tests' stamp: 'GC 18/Apr/2026 15:54:29'!
+testExportsSystemCategoryWithoutRegisteredPackage
+
+	| categoryName className |
+	categoryName := 'TonelExporter-Temp'.
+	className := #TonelExporterTempClass.
+	[
+		Object subclass: className
+			instanceVariableNames: ''
+			classVariableNames: ''
+			poolDictionaries: ''
+			category: categoryName.
+		(Smalltalk at: className) compile: 'sample
+	^ 1' classified: 'testing'.
+		self withExportDirectoryDo: [:directory |
+			| packageDirectory classFile |
+			TonelPackageExporter exportPackageNamed: categoryName to: directory.
+			packageDirectory := directory / categoryName.
+			classFile := packageDirectory // 'TonelExporterTempClass.class.st'.
+			self assert: packageDirectory exists.
+			self assert: ((packageDirectory // 'package.st') exists).
+			self assert: classFile exists.
+			self assert: (classFile fileContents includesSubString: 'TonelExporterTempClass>>sample [') ]
+	] ensure: [
+		(SystemOrganization categories includes: categoryName)
+			ifTrue: [ SystemOrganization removeSystemCategory: categoryName ] ]! !
+
+!TonelPackageExporterTest methodsFor: 'tests' stamp: 'GC 18/Apr/2026 15:08:26'!
+testIdeBrowserExportsSelectedPackageToDirectory
+
+	self withExportDirectoryDo: [:directory |
+		| browser packageDirectory |
+		browser := IdeBrowserModel new.
+		browser selectPackageNamed: 'CuisUI-IDE-Browser'.
+		browser exportTonelTo: directory.
+		packageDirectory := directory / 'CuisUI-IDE-Browser'.
+		self assert: packageDirectory exists.
+		self assert: ((packageDirectory // 'package.st') exists)]! !
+
+!TonelPackageExporterTest methodsFor: 'helpers' stamp: 'GC 18/Apr/2026 15:06:28'!
+newExportDirectory
+
+	| directoryName directory |
+	directoryName := 'tmp-tonel-export-' , Time localMillisecondClock printString.
+	directory := DirectoryEntry userBaseDirectory / directoryName.
+	directory exists ifTrue: [ directory recursiveDelete ].
+	directory assureExistence.
+	^ directory! !
+
+!TonelPackageExporterTest methodsFor: 'helpers' stamp: 'GC 18/Apr/2026 15:05:56'!
+withExportDirectoryDo: aBlock
+
+	| directory |
+	directory := self newExportDirectory.
+	[ aBlock value: directory ] ensure: [ directory recursiveDelete ]! !

@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 11 April 2026 at 11:12:23 pm'!
+'From Cuis7.7 [latest update: #7777] on 18 April 2026 at 3:09:32 pm'!
 'Description '!
-!provides: 'CuisUI-IDE-Browser' 1 28!
+!provides: 'CuisUI-IDE-Browser' 1 30!
 !requires: 'CuisUI-IDE-Core' 1 0 nil!
 SystemOrganization addCategory: #'CuisUI-IDE-Browser'!
 
@@ -56,7 +56,7 @@ IdeProtocolWrapper class
 	instanceVariableNames: ''!
 
 
-!IdeBrowserSampleClass methodsFor: 'alpha' stamp: 'GC 11/Apr/2026 22:30:10'!
+!IdeBrowserSampleClass methodsFor: 'alpha' stamp: 'GC 18/Apr/2026 15:09:25'!
 alphaOne
 	^ 'alpha-one'! !
 
@@ -486,6 +486,26 @@ goToDefinitionFromSelectedClass
 	behavior ifNil: [ ^ self ].
 	IdeBrowserWindow openOnClass: behavior selector: nil! !
 
+!IdeBrowserModel methodsFor: 'menu commands' stamp: 'GC 18/Apr/2026 15:08:26'!
+exportTonel
+
+	| directoryPath |
+	selectedPackageName ifNil: [ ^ self inform: 'No hay paquete seleccionado.' ].
+	directoryPath := self
+		request: 'Exportar Tonel a carpeta:'
+		initialAnswer: (DirectoryEntry userDirectory: 'TonelExports') pathName
+		orCancel: [ ^ self ].
+	^ self exportTonelTo: (DirectoryEntry withPathName: directoryPath)! !
+
+!IdeBrowserModel methodsFor: 'menu commands' stamp: 'GC 18/Apr/2026 15:08:26'!
+exportTonelTo: aDirectoryEntry
+
+	selectedPackageName ifNil: [ ^ self inform: 'No hay paquete seleccionado.' ].
+	aDirectoryEntry assureExistence.
+	DirectoryEntry userDirectory: 'TonelExports' put: aDirectoryEntry pathName.
+	TonelPackageExporter exportPackageNamed: selectedPackageName to: aDirectoryEntry.
+	^ self inform: 'Package exportado en ', (aDirectoryEntry / selectedPackageName) pathName! !
+
 !IdeBrowserWindow methodsFor: 'GUI building' stamp: 'GC 4/Apr/2026 04:00:25'!
 buildClassList
 	^ (PluggableListMorph
@@ -506,7 +526,7 @@ buildMethodTree
 		autoExpand: true;
 		yourself! !
 
-!IdeBrowserWindow methodsFor: 'GUI building' stamp: 'GC 4/Apr/2026 19:03:38'!
+!IdeBrowserWindow methodsFor: 'GUI building' stamp: 'GC 18/Apr/2026 14:59:36'!
 buildPackageList
 
 	^ (HierarchicalListMorph
@@ -514,7 +534,7 @@ buildPackageList
 		listGetter: #packageRoots
 		indexGetter: #selectedPackageName
 		indexSetter: #setSelectedPackageTreeItem:)
-		menuNshortcutsKey: #classListMenuSpec;
+		menuNshortcutsKey: #packageListMenuSpec;
 		autoDeselect: true;
 		autoExpand: true;
 		yourself! !
@@ -572,6 +592,14 @@ browseMethodFull
 goToDefinition
 
 	^ model goToDefinition! !
+
+!IdeBrowserWindow methodsFor: 'menu & kbd shortcuts' stamp: 'GC 18/Apr/2026 14:59:36'!
+packageListMenuSpec
+
+	^ #(
+		#(0 'Package List' false)
+		#(10 'Export Tonel' nil model exportTonel packageIcon 'export the selected package in Tonel format')
+	)! !
 
 !IdeBrowserWindow class methodsFor: 'instance creation' stamp: 'GC 11/Apr/2026 17:32:53'!
 onClass: aBehavior selector: aSelector
