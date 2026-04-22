@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 2:33:46 am'!
+'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 2:54:02 am'!
 'Description '!
-!provides: 'CuisUI-IDE-Tests' 1 42!
+!provides: 'CuisUI-IDE-Tests' 1 43!
 !requires: 'CuisUI-IDE-Browser' 1 0 1!
 !requires: 'CuisUI-Tonel' 1 0 1!
 !requires: 'CuisUI-IDE-Core' 1 0 1!
@@ -125,6 +125,16 @@ TestCase subclass: #TonelPackageExporterTest
 	category: 'CuisUI-IDE-Tests'!
 !classDefinition: 'TonelPackageExporterTest class' category: #'CuisUI-IDE-Tests'!
 TonelPackageExporterTest class
+	instanceVariableNames: ''!
+
+!classDefinition: #TonelPackageImporterTest category: #'CuisUI-IDE-Tests'!
+TestCase subclass: #TonelPackageImporterTest
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'CuisUI-IDE-Tests'!
+!classDefinition: 'TonelPackageImporterTest class' category: #'CuisUI-IDE-Tests'!
+TonelPackageImporterTest class
 	instanceVariableNames: ''!
 
 
@@ -1012,6 +1022,77 @@ newExportDirectory
 	^ directory! !
 
 !TonelPackageExporterTest methodsFor: 'helpers' stamp: 'GC 18/Apr/2026 15:05:56'!
+withExportDirectoryDo: aBlock
+
+	| directory |
+	directory := self newExportDirectory.
+	[ aBlock value: directory ] ensure: [ directory recursiveDelete ]! !
+
+!TonelPackageImporterTest methodsFor: 'tests' stamp: 'GC 22/Apr/2026 02:52:51'!
+testImportsExportedPackageIncludingExtensions
+
+	| packageName className extensionSelector |
+	packageName := 'TonelImporterTemp' , Time localMillisecondClock printString.
+	className := ('TonelImporterTempClass' , Time localMillisecondClock printString) asSymbol.
+	extensionSelector := ('tonelImportedExtension' , Time localMillisecondClock printString) asSymbol.
+	[
+		self createPackageNamed: packageName classNamed: className extensionSelector: extensionSelector.
+		self withExportDirectoryDo: [:directory |
+			| packageDirectory importedPackage importedClass |
+			TonelPackageExporter exportPackageNamed: packageName to: directory.
+			packageDirectory := directory / packageName.
+			self removeImportedArtifactsForPackageNamed: packageName className: className extensionSelector: extensionSelector.
+			TonelPackageImporter importPackageFrom: packageDirectory.
+			importedPackage := CodePackage installedPackages at: packageName.
+			importedClass := Smalltalk at: className.
+			self assert: importedPackage notNil.
+			self assert: (importedPackage includesClass: importedClass).
+			self assert: (importedClass includesSelector: #sample).
+			self assert: ((importedClass >> #sample) category) equals: 'testing'.
+			self assert: (importedClass class includesSelector: #version).
+			self assert: ((importedClass class >> #version) category) equals: 'testing'.
+			self assert: (Object includesSelector: extensionSelector).
+			self assert: (importedPackage extensionMethods anySatisfy: [:each | each selector = extensionSelector ]) ]
+	] ensure: [
+		self removeImportedArtifactsForPackageNamed: packageName className: className extensionSelector: extensionSelector ]! !
+
+!TonelPackageImporterTest methodsFor: 'helpers' stamp: 'GC 22/Apr/2026 02:52:51'!
+createPackageNamed: packageName classNamed: className extensionSelector: extensionSelector
+
+	CodePackage named: packageName createIfAbsent: true registerIfNew: true.
+	Object subclass: className
+		instanceVariableNames: ''
+		classVariableNames: ''
+		poolDictionaries: ''
+		category: packageName.
+	(Smalltalk at: className) compile: 'sample
+	^ 1' classified: 'testing'.
+	(Smalltalk at: className) class compile: 'version
+	^ 2' classified: 'testing'.
+	Object compile: extensionSelector asString , '
+	^ 99' classified: '*', packageName asLowercase! !
+
+!TonelPackageImporterTest methodsFor: 'helpers' stamp: 'GC 22/Apr/2026 02:44:32'!
+newExportDirectory
+
+	| directoryName directory |
+	directoryName := 'tmp-tonel-import-' , Time localMillisecondClock printString.
+	directory := DirectoryEntry userBaseDirectory / directoryName.
+	directory exists ifTrue: [ directory recursiveDelete ].
+	directory assureExistence.
+	^ directory! !
+
+!TonelPackageImporterTest methodsFor: 'helpers' stamp: 'GC 22/Apr/2026 02:44:32'!
+removeImportedArtifactsForPackageNamed: packageName className: className extensionSelector: extensionSelector
+
+	| package |
+	(Object includesSelector: extensionSelector) ifTrue: [ Object removeSelector: extensionSelector ].
+	(Smalltalk includesKey: className) ifTrue: [ (Smalltalk at: className) removeFromSystem ].
+	(SystemOrganization categories includes: packageName) ifTrue: [ SystemOrganization removeSystemCategory: packageName ].
+	package := CodePackage installedPackages at: packageName ifAbsent: [ nil ].
+	package ifNotNil: [ CodePackage deregister: package ]! !
+
+!TonelPackageImporterTest methodsFor: 'helpers' stamp: 'GC 22/Apr/2026 02:44:32'!
 withExportDirectoryDo: aBlock
 
 	| directory |
