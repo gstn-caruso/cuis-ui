@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 3:19:13 am'!
+'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 3:23:01 am'!
 'Description '!
-!provides: 'CuisUI-IDE-Tests' 1 48!
+!provides: 'CuisUI-IDE-Tests' 1 49!
 !requires: 'CuisUI-IDE-Browser' 1 0 1!
 !requires: 'CuisUI-Tonel' 1 0 1!
 !requires: 'CuisUI-IDE-Core' 1 0 1!
@@ -329,6 +329,29 @@ testPackageTreeGroupsPackagesByPrefix
 	self assert: (childNames includes: 'Arrayed').
 	self assert: (childNames includes: 'Streams').
 	self assert: (childNames includes: 'Sequenceable')! !
+
+!IdeBrowserModelTest methodsFor: 'tests' stamp: 'GC 22/Apr/2026 03:22:16'!
+testRemovePackageChangesPackageRoots
+
+	| packageName className browser changes |
+	packageName := 'IdeRemovePackageTemp' , Time localMillisecondClock printString.
+	className := (packageName , 'Class') asSymbol.
+	[
+		Object subclass: className
+			instanceVariableNames: ''
+			classVariableNames: ''
+			poolDictionaries: ''
+			category: packageName.
+		browser := IdeBrowserModelAutoConfirm new.
+		changes := OrderedCollection new.
+		browser when: #changed: send: #add: to: changes.
+		browser selectPackageNamed: packageName.
+		changes removeAll.
+		browser removePackage.
+		self assert: (changes includes: #packageRoots)
+	] ensure: [
+		(Smalltalk includesKey: className) ifTrue: [ (Smalltalk at: className) removeFromSystem ].
+		(SystemOrganization categories includes: packageName) ifTrue: [ SystemOrganization removeSystemCategory: packageName ] ]! !
 
 !IdeBrowserModelTest methodsFor: 'tests' stamp: 'GC 22/Apr/2026 03:18:00'!
 testRemovePackageRemovesSelectedSystemCategoryClasses

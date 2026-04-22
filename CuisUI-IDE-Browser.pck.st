@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 3:19:13 am'!
+'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 3:23:01 am'!
 'Description '!
-!provides: 'CuisUI-IDE-Browser' 1 34!
+!provides: 'CuisUI-IDE-Browser' 1 35!
 !requires: 'CuisUI-Tonel' 1 0 1!
 !requires: 'CuisUI-IDE-Core' 1 0 1!
 SystemOrganization addCategory: #'CuisUI-IDE-Browser'!
@@ -57,7 +57,7 @@ IdeProtocolWrapper class
 	instanceVariableNames: ''!
 
 
-!IdeBrowserSampleClass methodsFor: 'alpha' stamp: 'GC 22/Apr/2026 03:19:12'!
+!IdeBrowserSampleClass methodsFor: 'alpha' stamp: 'GC 22/Apr/2026 03:23:00'!
 alphaOne
 	^ 'alpha-one'! !
 
@@ -526,7 +526,7 @@ importTonelFrom: aDirectoryEntry
 	self selectPackageNamed: importedPackage packageName.
 	^ self inform: 'Package importado desde ', aDirectoryEntry pathName! !
 
-!IdeBrowserModel methodsFor: 'menu commands' stamp: 'GC 22/Apr/2026 03:15:44'!
+!IdeBrowserModel methodsFor: 'menu commands' stamp: 'GC 22/Apr/2026 03:22:44'!
 removePackage
 
 	selectedPackageName ifNil: [ ^ self ].
@@ -541,6 +541,7 @@ and all its classes?') ifFalse: [ ^ self ] ].
 	self synchronizeFromBrowser.
 	selectedMethodTreeItem := nil.
 	self changed: #selectedPackageName.
+	self changed: #packageRoots.
 	self changed: #packageListIndex.
 	self changed: #classList.
 	self changed: #classListIndex.
