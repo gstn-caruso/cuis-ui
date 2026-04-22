@@ -9,6 +9,7 @@ repo ifNil: [ ^ self ].
 
 packages := #(
 	'CuisUI-IDE-Core.pck.st'
+	'CuisUI-Tonel.pck.st'
 	'CuisUI-IDE-Browser.pck.st'
 	'CuisUI-IDE-Tests.pck.st').
 

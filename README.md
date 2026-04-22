@@ -8,7 +8,8 @@ Workspace vivo para construir una experiencia de IDE Morphic sobre Cuis Smalltal
 - **Editor especializado**: `IdeCodePaneMorph` envuelve a `SmalltalkEditor` con gutter propio, resaltado temático y overlay de quick actions.
 - **Quick actions**: `IdeQuickActionController` coordina providers (p. ej. toggles de breakpoints) y muestra la lamparita contextual.
 - **Breakpoints de método**: integración con `BreakingMethodWrapper` para activar/desactivar desde el popup.
-- **Suite automática**: 35 tests cubren modelo, ventana, providers y full UI wiring (`CuisUI-IDE-Tests`).
+- **Exportación Tonel**: el `IdeBrowser` puede exportar packages, categorías y raíces agrupadoras a formato Tonel.
+- **Suite automática**: 35 tests cubren modelo, ventana, providers y exportación Tonel (`CuisUI-IDE-Tests`).
 
 ## Requisitos
 
@@ -36,8 +37,9 @@ El script vive en `scripts/install-cuis-ui-packages.st` para volver a instalar l
 
 - `CuisUI-IDE-Core.pck.st`: morphs del editor, tema, overlay, gutter y controladores de quick actions.
 - `CuisUI-IDE-Browser.pck.st`: `IdeBrowserModel`, `IdeBrowserWindow` y wrappers de árbol/lista.
+- `CuisUI-Tonel.pck.st`: exportador Tonel usado por el browser para persistir packages en formato carpeta/archivo.
 - `CuisUI-IDE-Tests.pck.st`: suite automatizada con doubles (`IdeFakeKeyboardEvent`, `IdeFakeQuickActionProvider`, etc.).
-- `scripts/install-cuis-ui-packages.st`: fileIn interactivo para instalar Core, Browser y Tests.
+- `scripts/install-cuis-ui-packages.st`: fileIn interactivo para instalar Core, Tonel, Browser y Tests.
 
 ## Flujo de trabajo recomendado
 

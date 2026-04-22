@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 18 April 2026 at 4:10:35 pm'!
+'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 2:34:02 am'!
 'Description '!
-!provides: 'CuisUI-Tonel' 1 3!
+!provides: 'CuisUI-Tonel' 1 5!
 SystemOrganization addCategory: #'CuisUI-Tonel'!
 
 
@@ -100,11 +100,11 @@ subcategoriesForRootNamed: aName
 	^ (SystemOrganization categories
 		select: [:each | (SystemOrganization rootCategoryOf: each) = aName]) asArray! !
 
-!TonelPackageExporter methodsFor: 'writing' stamp: 'GC 18/Apr/2026 15:08:26'!
+!TonelPackageExporter methodsFor: 'writing' stamp: 'GC 22/Apr/2026 02:33:59'!
 write: aString toFile: aFileEntry
 
 	aFileEntry forceWriteStreamDo: [:stream |
-		stream nextPutAll: aString normalizedLineDelimiter]! !
+		stream nextPutAll: aString ]! !
 
 !TonelPackageExporter methodsFor: 'writing' stamp: 'GC 18/Apr/2026 15:09:11'!
 writeClassDefinitionsFor: aPackage on: aDirectoryEntry
@@ -163,6 +163,16 @@ writePackageDefinitionNamed: aName on: aDirectoryEntry
 		write: (self tonelPackageDefinitionNamed: aName)
 		toFile: (aDirectoryEntry // 'package.st')! !
 
+!TonelPackageExporter methodsFor: 'tonel' stamp: 'GC 22/Apr/2026 02:33:16'!
+classLabel
+
+	^ 'Class'! !
+
+!TonelPackageExporter methodsFor: 'tonel' stamp: 'GC 22/Apr/2026 02:33:16'!
+extensionLabel
+
+	^ 'Extension'! !
+
 !TonelPackageExporter methodsFor: 'tonel' stamp: 'GC 18/Apr/2026 15:08:26'!
 metadataEntriesForClass: aClass
 
@@ -179,6 +189,11 @@ metadataEntriesForClass: aClass
 	entries add: '#category : ' , (self tonelString: aClass category).
 	^ entries! !
 
+!TonelPackageExporter methodsFor: 'tonel' stamp: 'GC 22/Apr/2026 02:33:16'!
+packageLabel
+
+	^ 'Package'! !
+
 !TonelPackageExporter methodsFor: 'tonel' stamp: 'GC 18/Apr/2026 15:08:26'!
 shouldWriteComment: aString
 
@@ -194,7 +209,7 @@ tonelArray: aCollection
 			separatedBy: [ stream nextPutAll: ', ' ].
 		stream nextPutAll: ']']! !
 
-!TonelPackageExporter methodsFor: 'tonel' stamp: 'GC 18/Apr/2026 15:08:26'!
+!TonelPackageExporter methodsFor: 'tonel' stamp: 'GC 22/Apr/2026 02:33:16'!
 tonelClassDefinitionFor: aClass
 
 	| metadataEntries methodDefinitions classComment |
@@ -204,7 +219,7 @@ tonelClassDefinitionFor: aClass
 	^ String streamContents: [:stream |
 		(self shouldWriteComment: classComment) ifTrue: [
 			stream nextPut: $"; nextPutAll: (self tonelComment: classComment); nextPut: $"; cr; cr].
-		stream nextPutAll: TonelWriter classLabel; nextPutAll: ' {'; cr.
+		stream nextPutAll: self classLabel; nextPutAll: ' {'; cr.
 		self writeMetadataEntries: metadataEntries on: stream.
 		stream nextPutAll: '}'.
 		methodDefinitions ifNotEmpty: [
@@ -216,7 +231,7 @@ tonelComment: aString
 
 	^ aString copyReplaceAll: '"' with: '""'! !
 
-!TonelPackageExporter methodsFor: 'tonel' stamp: 'GC 18/Apr/2026 15:08:26'!
+!TonelPackageExporter methodsFor: 'tonel' stamp: 'GC 22/Apr/2026 02:33:16'!
 tonelExtensionDefinitionFor: aClass methods: methodReferences
 
 	| sortedMethods |
@@ -226,7 +241,7 @@ tonelExtensionDefinitionFor: aClass methods: methodReferences
 			ifFalse: [ a selector asString < b selector asString ]].
 	^ String streamContents: [:stream |
 		stream
-			nextPutAll: TonelWriter extensionLabel;
+			nextPutAll: self extensionLabel;
 			nextPutAll: ' {'; cr;
 			nextPutAll: String tab; nextPutAll: '#name : '; nextPutAll: (self tonelString: aClass name); cr;
 			nextPutAll: '}'; cr; cr.
@@ -281,22 +296,22 @@ tonelMethodDefinitionsForClass: aClass
 			do: [:each | stream nextPutAll: each]
 			separatedBy: [ stream cr; cr ]]! !
 
-!TonelPackageExporter methodsFor: 'tonel' stamp: 'GC 18/Apr/2026 15:08:26'!
+!TonelPackageExporter methodsFor: 'tonel' stamp: 'GC 22/Apr/2026 02:33:16'!
 tonelPackageDefinitionFor: aPackage
 
 	^ String streamContents: [:stream |
 		stream
-			nextPutAll: TonelWriter packageLabel;
+			nextPutAll: self packageLabel;
 			nextPutAll: ' {'; cr;
 			nextPutAll: String tab; nextPutAll: '#name : '; nextPutAll: (self tonelString: aPackage packageName); cr;
 			nextPutAll: '}'; cr]! !
 
-!TonelPackageExporter methodsFor: 'tonel' stamp: 'GC 18/Apr/2026 15:54:29'!
+!TonelPackageExporter methodsFor: 'tonel' stamp: 'GC 22/Apr/2026 02:33:16'!
 tonelPackageDefinitionNamed: aName
 
 	^ String streamContents: [:stream |
 		stream
-			nextPutAll: TonelWriter packageLabel;
+			nextPutAll: self packageLabel;
 			nextPutAll: ' {'; cr;
 			nextPutAll: String tab; nextPutAll: '#name : '; nextPutAll: (self tonelString: aName); cr;
 			nextPutAll: '}'; cr]! !

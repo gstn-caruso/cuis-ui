@@ -1,6 +1,9 @@
-'From Cuis7.7 [latest update: #7777] on 18 April 2026 at 4:10:36 pm'!
+'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 2:33:46 am'!
 'Description '!
 !provides: 'CuisUI-IDE-Tests' 1 42!
+!requires: 'CuisUI-IDE-Browser' 1 0 1!
+!requires: 'CuisUI-Tonel' 1 0 1!
+!requires: 'CuisUI-IDE-Core' 1 0 1!
 SystemOrganization addCategory: #'CuisUI-IDE-Tests'!
 
 
