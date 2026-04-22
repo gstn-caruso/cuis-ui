@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 2:54:01 am'!
+'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 3:08:10 am'!
 'Description '!
-!provides: 'CuisUI-Tonel' 1 7!
+!provides: 'CuisUI-Tonel' 1 8!
 SystemOrganization addCategory: #'CuisUI-Tonel'!
 
 
@@ -384,12 +384,12 @@ classRecordFromFile: aFileEntry
 		at: #methods put: (self methodRecordsFrom: source startingAt: metadataEnd + 1);
 		yourself! !
 
-!TonelPackageImporter methodsFor: 'importing' stamp: 'GC 22/Apr/2026 02:47:02'!
+!TonelPackageImporter methodsFor: 'importing' stamp: 'GC 22/Apr/2026 03:07:54'!
 compileMethodRecord: aMethodRecord
 
 	| behavior source |
 	behavior := self behaviorNamed: (aMethodRecord at: #behaviorName) classSide: (aMethodRecord at: #classSide).
-	source := (aMethodRecord at: #signature), (aMethodRecord at: #body).
+	source := self normalizedSourceForMethodRecord: aMethodRecord.
 	behavior compile: source classified: (aMethodRecord at: #category)! !
 
 !TonelPackageImporter methodsFor: 'importing' stamp: 'GC 22/Apr/2026 02:47:02'!
@@ -469,6 +469,11 @@ importPackageFrom: aDirectoryEntry
 		self importMethodsFromRecord: (self extensionRecordFromFile: each)].
 	package hasUnsavedChanges: false.
 	^ package! !
+
+!TonelPackageImporter methodsFor: 'importing' stamp: 'GC 22/Apr/2026 03:07:54'!
+normalizedSourceForMethodRecord: aMethodRecord
+
+	^ ((aMethodRecord at: #signature), (aMethodRecord at: #body)) withLineEndings: String newLineString! !
 
 !TonelPackageImporter methodsFor: 'importing' stamp: 'GC 22/Apr/2026 02:47:02'!
 packageNameFrom: aDirectoryEntry

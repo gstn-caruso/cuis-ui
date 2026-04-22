@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 2:54:02 am'!
+'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 3:08:10 am'!
 'Description '!
-!provides: 'CuisUI-IDE-Tests' 1 43!
+!provides: 'CuisUI-IDE-Tests' 1 45!
 !requires: 'CuisUI-IDE-Browser' 1 0 1!
 !requires: 'CuisUI-Tonel' 1 0 1!
 !requires: 'CuisUI-IDE-Core' 1 0 1!
@@ -467,6 +467,21 @@ testOpensSelectingARealPackage
 	self assert: browser packageListIndex equals: 1.
 	self deny: browser classList isEmpty.
 	self deny: (browser packageList at: browser packageListIndex) = '-- All System --'! !
+
+!IdeBrowserWindowTest methodsFor: 'tests' stamp: 'GC 22/Apr/2026 02:59:11'!
+testPackageListMenuIncludesImportTonel
+
+	| menuSpec exportEntry importEntry |
+	menuSpec := self openBrowserWindow packageListMenuSpec.
+	exportEntry := menuSpec second.
+	importEntry := menuSpec third.
+
+	self assert: exportEntry second equals: 'Export Tonel'.
+	self assert: exportEntry fourth equals: #model.
+	self assert: exportEntry fifth equals: #exportTonel.
+	self assert: importEntry second equals: 'Import Tonel'.
+	self assert: importEntry fourth equals: #model.
+	self assert: importEntry fifth equals: #importTonel! !
 
 !IdeBrowserWindowTest methodsFor: 'tests' stamp: 'GC 18/Apr/2026 14:59:36'!
 testPackageListMenuStartsWithExportTonel
@@ -1027,6 +1042,52 @@ withExportDirectoryDo: aBlock
 	| directory |
 	directory := self newExportDirectory.
 	[ aBlock value: directory ] ensure: [ directory recursiveDelete ]! !
+
+!TonelPackageImporterTest methodsFor: 'tests' stamp: 'GC 22/Apr/2026 02:59:11'!
+testIdeBrowserImportsTonelDirectoryAndSelectsPackage
+
+	| packageName className extensionSelector |
+	packageName := 'TonelImporterTemp' , Time localMillisecondClock printString.
+	className := ('TonelImporterTempClass' , Time localMillisecondClock printString) asSymbol.
+	extensionSelector := ('tonelImportedExtension' , Time localMillisecondClock printString) asSymbol.
+	[
+		self createPackageNamed: packageName classNamed: className extensionSelector: extensionSelector.
+		self withExportDirectoryDo: [:directory |
+			| packageDirectory browser importedClass |
+			TonelPackageExporter exportPackageNamed: packageName to: directory.
+			packageDirectory := directory / packageName.
+			self removeImportedArtifactsForPackageNamed: packageName className: className extensionSelector: extensionSelector.
+			browser := IdeBrowserModel new.
+			browser importTonelFrom: packageDirectory.
+			importedClass := Smalltalk at: className.
+			self assert: browser selectedPackageName equals: packageName.
+			self assert: (importedClass includesSelector: #sample).
+			self assert: (Object includesSelector: extensionSelector) ]
+	] ensure: [
+		self removeImportedArtifactsForPackageNamed: packageName className: className extensionSelector: extensionSelector ]! !
+
+!TonelPackageImporterTest methodsFor: 'tests' stamp: 'GC 22/Apr/2026 03:07:26'!
+testImportedMethodSourceDoesNotKeepTonelLineEndings
+
+	| packageName className extensionSelector |
+	packageName := 'TonelImporterTemp' , Time localMillisecondClock printString.
+	className := ('TonelImporterTempClass' , Time localMillisecondClock printString) asSymbol.
+	extensionSelector := ('tonelImportedExtension' , Time localMillisecondClock printString) asSymbol.
+	[
+		self createPackageNamed: packageName classNamed: className extensionSelector: extensionSelector.
+		self withExportDirectoryDo: [:directory |
+			| packageDirectory importedClass source |
+			TonelPackageExporter exportPackageNamed: packageName to: directory.
+			packageDirectory := directory / packageName.
+			self removeImportedArtifactsForPackageNamed: packageName className: className extensionSelector: extensionSelector.
+			TonelPackageImporter importPackageFrom: packageDirectory.
+			importedClass := Smalltalk at: className.
+			source := importedClass sourceCodeAt: #sample.
+			self deny: (source includesSubString: (String with: Character cr)).
+			self assert: (source includesSubString: 'sample').
+			self assert: (source includesSubString: '^ 1') ]
+	] ensure: [
+		self removeImportedArtifactsForPackageNamed: packageName className: className extensionSelector: extensionSelector ]! !
 
 !TonelPackageImporterTest methodsFor: 'tests' stamp: 'GC 22/Apr/2026 02:52:51'!
 testImportsExportedPackageIncludingExtensions

@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 2:33:45 am'!
+'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 2:59:40 am'!
 'Description '!
-!provides: 'CuisUI-IDE-Browser' 1 30!
+!provides: 'CuisUI-IDE-Browser' 1 31!
 !requires: 'CuisUI-Tonel' 1 0 1!
 !requires: 'CuisUI-IDE-Core' 1 0 1!
 SystemOrganization addCategory: #'CuisUI-IDE-Browser'!
@@ -507,6 +507,25 @@ exportTonelTo: aDirectoryEntry
 	TonelPackageExporter exportPackageNamed: selectedPackageName to: aDirectoryEntry.
 	^ self inform: 'Package exportado en ', (aDirectoryEntry / selectedPackageName) pathName! !
 
+!IdeBrowserModel methodsFor: 'menu commands' stamp: 'GC 22/Apr/2026 02:59:26'!
+importTonel
+
+	| directoryPath |
+	directoryPath := self
+		request: 'Importar Tonel desde carpeta del package:'
+		initialAnswer: (DirectoryEntry userDirectory: 'TonelImports') pathName
+		orCancel: [ ^ self ].
+	^ self importTonelFrom: (DirectoryEntry withPathName: directoryPath)! !
+
+!IdeBrowserModel methodsFor: 'menu commands' stamp: 'GC 22/Apr/2026 02:59:26'!
+importTonelFrom: aDirectoryEntry
+
+	| importedPackage |
+	importedPackage := TonelPackageImporter importPackageFrom: aDirectoryEntry.
+	DirectoryEntry userDirectory: 'TonelImports' put: aDirectoryEntry pathName.
+	self selectPackageNamed: importedPackage packageName.
+	^ self inform: 'Package importado desde ', aDirectoryEntry pathName! !
+
 !IdeBrowserWindow methodsFor: 'GUI building' stamp: 'GC 4/Apr/2026 04:00:25'!
 buildClassList
 	^ (PluggableListMorph
@@ -594,12 +613,13 @@ goToDefinition
 
 	^ model goToDefinition! !
 
-!IdeBrowserWindow methodsFor: 'menu & kbd shortcuts' stamp: 'GC 18/Apr/2026 14:59:36'!
+!IdeBrowserWindow methodsFor: 'menu & kbd shortcuts' stamp: 'GC 22/Apr/2026 02:59:26'!
 packageListMenuSpec
 
 	^ #(
 		#(0 'Package List' false)
 		#(10 'Export Tonel' nil model exportTonel packageIcon 'export the selected package in Tonel format')
+		#(20 'Import Tonel' nil model importTonel packageIcon 'import a Tonel package folder into the system')
 	)! !
 
 !IdeBrowserWindow class methodsFor: 'instance creation' stamp: 'GC 11/Apr/2026 17:32:53'!
