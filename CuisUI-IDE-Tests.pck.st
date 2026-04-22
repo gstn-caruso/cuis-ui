@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 3:23:01 am'!
+'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 3:28:08 am'!
 'Description '!
-!provides: 'CuisUI-IDE-Tests' 1 49!
+!provides: 'CuisUI-IDE-Tests' 1 50!
 !requires: 'CuisUI-IDE-Browser' 1 0 1!
 !requires: 'CuisUI-Tonel' 1 0 1!
 !requires: 'CuisUI-IDE-Core' 1 0 1!
@@ -262,6 +262,60 @@ testAcceptCompilesTheSelectedMethod
 
 	self assert: accepted.
 	self assert: IdeBrowserSampleClass new alphaOne equals: 'changed'! !
+
+!IdeBrowserModelTest methodsFor: 'tests' stamp: 'GC 22/Apr/2026 03:27:13'!
+testAcceptingNewClassDefinitionChangesClassList
+
+	| packageName className browser changes accepted |
+	packageName := 'IdeAcceptClassTemp' , Time localMillisecondClock printString.
+	className := (packageName , 'Class') asSymbol.
+	[
+		CodePackage named: packageName createIfAbsent: true registerIfNew: true.
+		browser := self newBrowser.
+		changes := OrderedCollection new.
+		browser when: #changed: send: #add: to: changes.
+		browser selectPackageNamed: packageName.
+		changes removeAll.
+		accepted := browser
+			contents: ('Object subclass: #' , className asString , '
+	instanceVariableNames: ''''
+	classVariableNames: ''''
+	poolDictionaries: ''''
+	category: ''' , packageName , '''') asText
+			notifying: nil.
+		self assert: accepted.
+		self assert: (changes includes: #classList)
+	] ensure: [
+		(CodePackage installedPackages includesKey: packageName) ifTrue: [ CodePackage deregister: (CodePackage installedPackages at: packageName) ].
+		(Smalltalk includesKey: className) ifTrue: [ (Smalltalk at: className) removeFromSystem ].
+		(SystemOrganization categories includes: packageName) ifTrue: [ SystemOrganization removeSystemCategory: packageName ] ]! !
+
+!IdeBrowserModelTest methodsFor: 'tests' stamp: 'GC 22/Apr/2026 03:27:13'!
+testAcceptingNewClassDefinitionChangesPackageRoots
+
+	| packageName className browser changes accepted |
+	packageName := 'IdeAcceptClassTemp' , Time localMillisecondClock printString.
+	className := (packageName , 'Class') asSymbol.
+	[
+		CodePackage named: packageName createIfAbsent: true registerIfNew: true.
+		browser := self newBrowser.
+		changes := OrderedCollection new.
+		browser when: #changed: send: #add: to: changes.
+		browser selectPackageNamed: packageName.
+		changes removeAll.
+		accepted := browser
+			contents: ('Object subclass: #' , className asString , '
+	instanceVariableNames: ''''
+	classVariableNames: ''''
+	poolDictionaries: ''''
+	category: ''' , packageName , '''') asText
+			notifying: nil.
+		self assert: accepted.
+		self assert: (changes includes: #packageRoots)
+	] ensure: [
+		(CodePackage installedPackages includesKey: packageName) ifTrue: [ CodePackage deregister: (CodePackage installedPackages at: packageName) ].
+		(Smalltalk includesKey: className) ifTrue: [ (Smalltalk at: className) removeFromSystem ].
+		(SystemOrganization categories includes: packageName) ifTrue: [ SystemOrganization removeSystemCategory: packageName ] ]! !
 
 !IdeBrowserModelTest methodsFor: 'tests' stamp: 'GC 4/Apr/2026 23:45:21'!
 testAcceptsTheSelectedClassDefinition

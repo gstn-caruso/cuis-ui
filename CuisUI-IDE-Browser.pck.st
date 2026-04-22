@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 3:23:01 am'!
+'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 3:28:08 am'!
 'Description '!
-!provides: 'CuisUI-IDE-Browser' 1 35!
+!provides: 'CuisUI-IDE-Browser' 1 36!
 !requires: 'CuisUI-Tonel' 1 0 1!
 !requires: 'CuisUI-IDE-Core' 1 0 1!
 SystemOrganization addCategory: #'CuisUI-IDE-Browser'!
@@ -57,7 +57,7 @@ IdeProtocolWrapper class
 	instanceVariableNames: ''!
 
 
-!IdeBrowserSampleClass methodsFor: 'alpha' stamp: 'GC 22/Apr/2026 03:23:00'!
+!IdeBrowserSampleClass methodsFor: 'alpha' stamp: 'GC 22/Apr/2026 03:27:57'!
 alphaOne
 	^ 'alpha-one'! !
 
@@ -356,13 +356,18 @@ acceptedStringOrText
 
 	^ browser acceptedStringOrText! !
 
-!IdeBrowserModel methodsFor: 'contents' stamp: 'GC 4/Apr/2026 22:43:08'!
+!IdeBrowserModel methodsFor: 'contents' stamp: 'GC 22/Apr/2026 03:27:48'!
 contents: input notifying: aRequestor
 
 	| accepted |
 	accepted := browser contents: input notifying: aRequestor.
 	accepted ifFalse: [ ^ false ].
 	self synchronizeFromBrowser.
+	self changed: #selectedPackageName.
+	self changed: #packageRoots.
+	self changed: #packageListIndex.
+	self changed: #classList.
+	self changed: #classListIndex.
 	self changed: #methodRoots.
 	self changed: #selectedMethodTreeItem.
 	self acceptedContentsChanged.
