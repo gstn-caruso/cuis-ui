@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 3:08:10 am'!
+'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 3:19:13 am'!
 'Description '!
-!provides: 'CuisUI-IDE-Tests' 1 45!
+!provides: 'CuisUI-IDE-Tests' 1 48!
 !requires: 'CuisUI-IDE-Browser' 1 0 1!
 !requires: 'CuisUI-Tonel' 1 0 1!
 !requires: 'CuisUI-IDE-Core' 1 0 1!
@@ -35,6 +35,16 @@ Object subclass: #IdeFakeQuickActionProvider
 	category: 'CuisUI-IDE-Tests'!
 !classDefinition: 'IdeFakeQuickActionProvider class' category: #'CuisUI-IDE-Tests'!
 IdeFakeQuickActionProvider class
+	instanceVariableNames: ''!
+
+!classDefinition: #IdeBrowserModelAutoConfirm category: #'CuisUI-IDE-Tests'!
+IdeBrowserModel subclass: #IdeBrowserModelAutoConfirm
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'CuisUI-IDE-Tests'!
+!classDefinition: 'IdeBrowserModelAutoConfirm class' category: #'CuisUI-IDE-Tests'!
+IdeBrowserModelAutoConfirm class
 	instanceVariableNames: ''!
 
 !classDefinition: #IdeKeyboardProbeMorph category: #'CuisUI-IDE-Tests'!
@@ -204,6 +214,11 @@ with: aCollection
 		actions: aCollection;
 		yourself! !
 
+!IdeBrowserModelAutoConfirm methodsFor: 'testing' stamp: 'GC 22/Apr/2026 03:18:00'!
+confirm: aString
+
+	^ true! !
+
 !IdeKeyboardProbeMorph methodsFor: 'initialization' stamp: 'GC 4/Apr/2026 06:17:56'!
 initialize
 	super initialize.
@@ -314,6 +329,27 @@ testPackageTreeGroupsPackagesByPrefix
 	self assert: (childNames includes: 'Arrayed').
 	self assert: (childNames includes: 'Streams').
 	self assert: (childNames includes: 'Sequenceable')! !
+
+!IdeBrowserModelTest methodsFor: 'tests' stamp: 'GC 22/Apr/2026 03:18:00'!
+testRemovePackageRemovesSelectedSystemCategoryClasses
+
+	| packageName className browser |
+	packageName := 'IdeRemovePackageTemp' , Time localMillisecondClock printString.
+	className := (packageName , 'Class') asSymbol.
+	[
+		Object subclass: className
+			instanceVariableNames: ''
+			classVariableNames: ''
+			poolDictionaries: ''
+			category: packageName.
+		browser := IdeBrowserModelAutoConfirm new.
+		browser selectPackageNamed: packageName.
+		browser removePackage.
+		self assert: (Smalltalk includesKey: className) not.
+		self assert: (SystemOrganization categories includes: packageName) not
+	] ensure: [
+		(Smalltalk includesKey: className) ifTrue: [ (Smalltalk at: className) removeFromSystem ].
+		(SystemOrganization categories includes: packageName) ifTrue: [ SystemOrganization removeSystemCategory: packageName ] ]! !
 
 !IdeBrowserModelTest methodsFor: 'tests' stamp: 'GC 11/Apr/2026 17:33:00'!
 testSelectedClassOrMetaClassReflectsMetaSelection
@@ -482,6 +518,18 @@ testPackageListMenuIncludesImportTonel
 	self assert: importEntry second equals: 'Import Tonel'.
 	self assert: importEntry fourth equals: #model.
 	self assert: importEntry fifth equals: #importTonel! !
+
+!IdeBrowserWindowTest methodsFor: 'tests' stamp: 'GC 22/Apr/2026 03:15:20'!
+testPackageListMenuIncludesRemovePackage
+
+	| menuSpec removeEntry |
+	menuSpec := self openBrowserWindow packageListMenuSpec.
+	removeEntry := menuSpec fourth.
+
+	self assert: removeEntry second equals: 'Remove (x)'.
+	self assert: removeEntry third equals: $x.
+	self assert: removeEntry fourth equals: #model.
+	self assert: removeEntry fifth equals: #removePackage! !
 
 !IdeBrowserWindowTest methodsFor: 'tests' stamp: 'GC 18/Apr/2026 14:59:36'!
 testPackageListMenuStartsWithExportTonel

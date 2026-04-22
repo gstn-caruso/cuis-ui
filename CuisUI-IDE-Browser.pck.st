@@ -1,6 +1,6 @@
-'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 2:59:40 am'!
+'From Cuis7.7 [latest update: #7777] on 22 April 2026 at 3:19:13 am'!
 'Description '!
-!provides: 'CuisUI-IDE-Browser' 1 31!
+!provides: 'CuisUI-IDE-Browser' 1 34!
 !requires: 'CuisUI-Tonel' 1 0 1!
 !requires: 'CuisUI-IDE-Core' 1 0 1!
 SystemOrganization addCategory: #'CuisUI-IDE-Browser'!
@@ -57,7 +57,7 @@ IdeProtocolWrapper class
 	instanceVariableNames: ''!
 
 
-!IdeBrowserSampleClass methodsFor: 'alpha' stamp: 'GC 18/Apr/2026 15:09:25'!
+!IdeBrowserSampleClass methodsFor: 'alpha' stamp: 'GC 22/Apr/2026 03:19:12'!
 alphaOne
 	^ 'alpha-one'! !
 
@@ -526,6 +526,28 @@ importTonelFrom: aDirectoryEntry
 	self selectPackageNamed: importedPackage packageName.
 	^ self inform: 'Package importado desde ', aDirectoryEntry pathName! !
 
+!IdeBrowserModel methodsFor: 'menu commands' stamp: 'GC 22/Apr/2026 03:15:44'!
+removePackage
+
+	selectedPackageName ifNil: [ ^ self ].
+	(SystemOrganization listAtCategoryNamed: selectedPackageName) isEmpty
+		ifFalse: [
+			(self confirm: 'Are you sure you want to
+remove this system category 
+and all its classes?') ifFalse: [ ^ self ] ].
+	SystemOrganization removeSystemCategory: selectedPackageName.
+	selectedPackageName := nil.
+	packageListIndex := 0.
+	self synchronizeFromBrowser.
+	selectedMethodTreeItem := nil.
+	self changed: #selectedPackageName.
+	self changed: #packageListIndex.
+	self changed: #classList.
+	self changed: #classListIndex.
+	self changed: #methodRoots.
+	self changed: #selectedMethodTreeItem.
+	self acceptedContentsChanged! !
+
 !IdeBrowserWindow methodsFor: 'GUI building' stamp: 'GC 4/Apr/2026 04:00:25'!
 buildClassList
 	^ (PluggableListMorph
@@ -613,13 +635,14 @@ goToDefinition
 
 	^ model goToDefinition! !
 
-!IdeBrowserWindow methodsFor: 'menu & kbd shortcuts' stamp: 'GC 22/Apr/2026 02:59:26'!
+!IdeBrowserWindow methodsFor: 'menu & kbd shortcuts' stamp: 'GC 22/Apr/2026 03:15:44'!
 packageListMenuSpec
 
 	^ #(
 		#(0 'Package List' false)
 		#(10 'Export Tonel' nil model exportTonel packageIcon 'export the selected package in Tonel format')
 		#(20 'Import Tonel' nil model importTonel packageIcon 'import a Tonel package folder into the system')
+		#(30 'Remove (x)' $x model removePackage deleteIcon 'remove the selected system category and all its classes')
 	)! !
 
 !IdeBrowserWindow class methodsFor: 'instance creation' stamp: 'GC 11/Apr/2026 17:32:53'!
